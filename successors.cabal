@@ -6,7 +6,7 @@ description:         This pacakge provides the
                      a node in a graph together with its successors. The
                      @Applicative@ (and @Monad@) instances are designed so that
                      the successors of the resulting value take exactly one
-                     step, either in the left or the right argument to @<*>@
+                     step, either in the left or the right argument to @\<*\>@
                      (or @>>=@).
 homepage:            https://github.com/nomeata/haskell-successors
 license:             MIT
