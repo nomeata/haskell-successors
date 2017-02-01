@@ -33,6 +33,11 @@ instance Applicative Succs where
     pure x = Succs x []
     Succs f fs <*> Succs x xs = Succs (f x) (map ($x) fs ++ map f xs)
 
+
+instance Monad Succs where
+    Succs x xs >>= f = Succs y (map (getCurrent . f) xs ++ ys)
+      where Succs y ys = f x
+
 -- | Return the represented node
 getCurrent :: Succs t -> t
 getCurrent (Succs x _) = x
@@ -41,7 +46,9 @@ getCurrent (Succs x _) = x
 getSuccs :: Succs t -> [t]
 getSuccs (Succs _ xs) = xs
 
-{- The Applicative laws:
+{-
+
+The Applicative laws:
 
   pure id <*> Succs x xs
 = Succs id [] <*> Succs x xs
@@ -72,5 +79,57 @@ getSuccs (Succs _ xs) = xs
 = Succs ($y) [] <*> Succs u us
 = pure ($ y) <*> u
 
+The Monad laws:
+  return a >>= k
+= Succs a [] >>= k
+= let Succs y ys = k a in Succs y (map (getCurrent . k) [] ++ ys)
+= let Succs y ys = k a in Succs y ys
+= k a
+
+  Succs x xs >>= return
+= let Succs y ys = return x in Succs y (map (getCurrent . return) xs ++ ys)
+= let Succs y ys = Succs x [] in Succs y (map (getCurrent . return) xs ++ ys)
+= Succs x (map (getCurrent . return) xs ++ [])
+= Succs x xs
+
+Lemma: getCurrent (s >>= k) = getCurrent (k (getCurrent s))
+Proof:
+  getCurrent (Succs x xs >>= k)
+= getCurrent (let Succs y ys = k x in Succs y …)
+= let Succs y ys = k x in y
+= getCurrent (k x)
+= getCurrent (k (getCurrent (Succs x xs)))
+
+  Succs x xs >>= (\x -> k x >>= h)
+= let Succs z zs = (\x -> k x >>= h) x in Succs z (map (getCurrent . (\x -> k x >>= h)) xs ++ zs)
+= let Succs z zs = k x >>= h in Succs z (map (getCurrent . (\x -> k x >>= h)) xs ++ zs)
+= let Succs z zs = k x >>= h in Succs z (map (getCurrent . (\x -> k x >>= h)) xs ++ zs)
+= let Succs z zs = k x >>= h in Succs z (map (getCurrent . (\x -> k x >>= h)) xs ++ zs)
+= let Succs z zs = (let Succs y ys = k x in Succs y ys >>= h) in Succs z (map (getCurrent . (\x -> k x >>= h)) xs ++ zs)
+= let Succs z zs = (let Succs y ys = k x in let Succs z zs = h y in Succs z (map (getCurrent . h) ys ++ zs)) in Succs z (map (getCurrent . (\x -> k x >>= h)) xs ++ zs)
+= let Succs y ys = k x in let Succs z zs = h y in let Succs z zs = Succs z (map (getCurrent . h) ys ++ zs) in Succs z (map (getCurrent . (\x -> k x >>= h)) xs ++ zs)
+= let Succs y ys = k x in let Succs z zs = h y in Succs z (map (getCurrent . (\x -> k x >>= h)) xs ++ map (getCurrent . h) ys ++ zs)
+= let Succs y ys = k x in let Succs z zs = h y in Succs z (map (\x -> getCurrent (k x >>= h)) xs ++ map (getCurrent . h) ys ++ zs)
+= let Succs y ys = k x in let Succs z zs = h y in Succs z (map (\x -> getCurrent (h (getCurrent (k x)))) xs ++ map (getCurrent . h) ys ++ zs)
+= let Succs y ys = k x in let Succs z zs = h y in Succs z (map (getCurrent . h . getCurrent . k) xs ++ map (getCurrent . h) ys ++ zs)
+= let Succs y ys = k x in let Succs z zs = h y in Succs z (map (getCurrent . h) (map (getCurrent . k) xs ++ ys) ++ zs)
+= let Succs y ys = k x in Succs y (map (getCurrent . k) xs ++ ys) >>= h
+= (let Succs y ys = k x in Succs y (map (getCurrent . k) xs ++ ys)) >>= h
+= (Succs x xs >>= k) >>= h
+
+Lemma: (<*>) = ap
+Proof:
+  Succs f fs <*> Succs x xs
+= Succs (f x) (map ($x) fs ++ map f xs)
+= let Succs y ys = Succs (f x) (map f xs) in Succs y (map ($x) fs ++ ys)
+= let Succs y ys = Succs (f x) (map (\x -> f x) xs) in Succs y (map ($x) fs ++ ys)
+= let Succs y ys = Succs (f x) (map (getCurrent . (\x -> pure (f x)) xs)) in Succs y (map ($x) fs ++ ys)
+= let Succs y ys = let Succs z zs = pure (f x) in Succs z (map (getCurrent . (\x -> pure (f x)) xs ++ zs)) in Succs y (map ($x) fs ++ ys)
+= let Succs y ys = Succs x xs >>= \x -> pure (f x) in Succs y (map ($x) fs ++ ys)
+= let Succs y ys = Succs x xs >>= \x -> pure (f x) in Succs y (map (\f -> getCurrent ((\x -> pure (f x)) (getCurrent (Succs x xs)))) fs ++ ys)
+= let Succs y ys = Succs x xs >>= \x -> pure (f x) in Succs y (map (\f -> getCurrent (Succs x xs >>= (\x -> pure (f x)))) fs ++ ys)
+= let Succs y ys = Succs x xs >>= \x -> pure (f x) in Succs y (map (getCurrent . (\f -> Succs x xs >>= (\x -> pure (f x)))) fs ++ ys)
+= Succs f fs >>= (\f -> Succs x xs >>= (\x -> pure (f x)))
+= Succs f fs `ap` Succs x xs
 
 -}
