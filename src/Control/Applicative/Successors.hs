@@ -38,11 +38,21 @@ instance Monad Succs where
     Succs x xs >>= f = Succs y (map (getCurrent . f) xs ++ ys)
       where Succs y ys = f x
 
--- | Return the represented node
+-- | Returns the represented node
+--
+-- Properties:
+--
+-- prop> getCurrent (pure x)  == x
+-- prop> getCurrent (f <*> x) == (getCurrent f) (getCurrent x)
+-- prop> getCurrent (x >>= k) == getCurrent (k (getCurrent x))
 getCurrent :: Succs t -> t
 getCurrent (Succs x _) = x
 
--- | Return the represented successors
+-- | Returns the represented successors
+--
+-- prop> getSuccs (pure x)  == []
+-- prop> getSuccs (f <*> x) == map ($ getCurrent x) (getSuccs f) ++ map (getCurrent f) (getSuccs x)
+-- prop> getSuccs (x >>= k) == map (getCurrent . k) (getSuccs x) ++ getSuccs k (getCurrent x)
 getSuccs :: Succs t -> [t]
 getSuccs (Succs _ xs) = xs
 
