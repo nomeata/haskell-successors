@@ -1,7 +1,7 @@
 name:                successors
 version:             0.1
 synopsis:            An applicative functor to manage successors
-description:         This pacakge provides the
+description:         This package provides the
                      'Control.Applicative.Successors.Succs' functor. It models
                      a node in a graph together with its successors. The
                      @Applicative@ (and @Monad@) instances are designed so that
