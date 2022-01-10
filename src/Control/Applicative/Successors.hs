@@ -31,7 +31,7 @@ instance Functor Succs where
 
 instance Applicative Succs where
     pure x = Succs x []
-    Succs f fs <*> Succs x xs = Succs (f x) (map ($x) fs ++ map f xs)
+    Succs f fs <*> Succs x xs = Succs (f x) (map ($ x) fs ++ map f xs)
 
 
 instance Monad Succs where
@@ -62,7 +62,7 @@ The Applicative laws:
 
   pure id <*> Succs x xs
 = Succs id [] <*> Succs x xs
-= Succs (id x) (map ($x) [] ++ map id xs)
+= Succs (id x) (map ($ x) [] ++ map id xs)
 = Succs x xs
 
   pure (.) <*> Succs u us <*> Succs v vs <*> Succs w ws
@@ -130,12 +130,12 @@ Proof:
 Lemma: (<*>) = ap
 Proof:
   Succs f fs <*> Succs x xs
-= Succs (f x) (map ($x) fs ++ map f xs)
-= let Succs y ys = Succs (f x) (map f xs) in Succs y (map ($x) fs ++ ys)
-= let Succs y ys = Succs (f x) (map (\x -> f x) xs) in Succs y (map ($x) fs ++ ys)
-= let Succs y ys = Succs (f x) (map (getCurrent . (\x -> pure (f x)) xs)) in Succs y (map ($x) fs ++ ys)
-= let Succs y ys = let Succs z zs = pure (f x) in Succs z (map (getCurrent . (\x -> pure (f x)) xs ++ zs)) in Succs y (map ($x) fs ++ ys)
-= let Succs y ys = Succs x xs >>= \x -> pure (f x) in Succs y (map ($x) fs ++ ys)
+= Succs (f x) (map ($ x) fs ++ map f xs)
+= let Succs y ys = Succs (f x) (map f xs) in Succs y (map ($ x) fs ++ ys)
+= let Succs y ys = Succs (f x) (map (\x -> f x) xs) in Succs y (map ($ x) fs ++ ys)
+= let Succs y ys = Succs (f x) (map (getCurrent . (\x -> pure (f x)) xs)) in Succs y (map ($ x) fs ++ ys)
+= let Succs y ys = let Succs z zs = pure (f x) in Succs z (map (getCurrent . (\x -> pure (f x)) xs ++ zs)) in Succs y (map ($ x) fs ++ ys)
+= let Succs y ys = Succs x xs >>= \x -> pure (f x) in Succs y (map ($ x) fs ++ ys)
 = let Succs y ys = Succs x xs >>= \x -> pure (f x) in Succs y (map (\f -> getCurrent ((\x -> pure (f x)) (getCurrent (Succs x xs)))) fs ++ ys)
 = let Succs y ys = Succs x xs >>= \x -> pure (f x) in Succs y (map (\f -> getCurrent (Succs x xs >>= (\x -> pure (f x)))) fs ++ ys)
 = let Succs y ys = Succs x xs >>= \x -> pure (f x) in Succs y (map (getCurrent . (\f -> Succs x xs >>= (\x -> pure (f x)))) fs ++ ys)
